@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 from math import radians, cos, sin, asin, sqrt
-from copy import deepcopy
-from statistics import harmonic_mean
 
 df = pd.read_csv('sites.csv') #read the data from the csv as a pandas dataframe
 dists = np.zeros([70,70]) #create an empty 70x70 array
