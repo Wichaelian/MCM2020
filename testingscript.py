@@ -15,15 +15,17 @@ def testschedule(schedule):
     demands = np.array((df['Average Demand per Visit']))
     increment = np.matmul(demands/28, dists) #how much demand increases every day
     
-    ntrials = 10
+    ntrials = 5
     
     avgfairness = np.zeros(ntrials)
     avgdemand = np.zeros(ntrials)
     ginicoeff = np.zeros(ntrials)
+    totalfood = np.zeros(ntrials)
     for i in range(ntrials):
         nsrvd = 0
         fairness = 0
         excessdemand = 0
+        totallbs = 0
         nvisits = np.zeros(70)
         for day in schedule:    
             site1 = day[0]
@@ -32,8 +34,8 @@ def testschedule(schedule):
             demand1 = random.normalvariate(demands[site1],stdevs[site1])
             demand2 = random.normalvariate(demands[site2],stdevs[site2])
             
-            fair1, nsrvd1 = runsite(demand1)
-            fair2, nsrvd2 = runsite(demand2)
+            fair1, nsrvd1, pds1 = runsite(demand1, demands[site1])
+            fair2, nsrvd2, pds2 = runsite(demand2, demands[site2])
             
             fairness += fair1*nsrvd1 + fair2*nsrvd2
             nsrvd += nsrvd1 + nsrvd2
@@ -47,20 +49,24 @@ def testschedule(schedule):
             demands = [0 if x<0 else x for x in demands]
             demands = demands + increment
             excessdemand += sum(demands)
+            totallbs += pds1+pds2
             
         nvisits.sort()
         
         avgdemand[i] = excessdemand/365
         avgfairness[i] = fairness/nsrvd
         ginicoeff[i] = gini(nvisits)
+        totalfood[i] = totallbs
     
     Average_Demand = np.mean(avgdemand)
     Average_Fairness = np.mean(avgfairness)
     Gini_Coefficient = np.mean(ginicoeff)
+    Total_Food = np.mean(totallbs)
     
     print('Average Demand: ', Average_Demand)
     print('Average Fairness: ', Average_Fairness)
     print('Gini Coefficient: ', Gini_Coefficient)
+    print('Total Food Distributed', Total_Food)
     
     return [Average_Demand, Average_Fairness, Gini_Coefficient]
 
