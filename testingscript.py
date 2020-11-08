@@ -1,21 +1,17 @@
 import numpy as np
 import pandas as pd
-from weighted_fairness_functions import runsite, gini
+from weighted_fairness_functions import runsite, gini, returndata
 import random
 
 schedule = np.load('schedule.npy')
-
 def testschedule(schedule):
     
     df = pd.read_csv('sites.csv') #read the data from the csv as a pandas dataframe
     dists = np.load('dists.npy')
-    stdevs = np.array((df['StDev(Demand per Visit)']))
-    variance = stdevs**2
-    stdevs = np.sqrt(np.matmul(variance,dists))
-    demands = np.array((df['Average Demand per Visit']))
-    increment = np.matmul(demands/28, dists) #how much demand increases every day
+    data = [df,dists]
     
-    ntrials = 5
+    demands, stdevs, increment = returndata(data)
+    ntrials = 2
     
     avgfairness = np.zeros(ntrials)
     avgdemand = np.zeros(ntrials)
@@ -31,25 +27,23 @@ def testschedule(schedule):
             site1 = day[0]
             site2 = day[1]
             
-            demand1 = random.normalvariate(demands[site1],stdevs[site1])
-            demand2 = random.normalvariate(demands[site2],stdevs[site2])
-            
-            fair1, nsrvd1, pds1 = runsite(demand1, demands[site1])
-            fair2, nsrvd2, pds2 = runsite(demand2, demands[site2])
+            fair1, nsrvd1, lbs1 = runsite(site1, data)
+            fair2, nsrvd2, lbs2 = runsite(site2, data)
             
             fairness += fair1*nsrvd1 + fair2*nsrvd2
             nsrvd += nsrvd1 + nsrvd2
             
-            demands = (demands - min(demand1,nsrvd1)*dists[site1])
-            demands = (demands - min(demand2,nsrvd2)*dists[site2])
-        
+            demands = (demands - min(254, lbs1/59.08)*dists[site1])
+            demands = (demands - min(254, lbs2/59.08)*dists[site2])
+            
+            #print(demands)
             nvisits[site1] += 1
             nvisits[site2] += 1
         
             demands = [0 if x<0 else x for x in demands]
             demands = demands + increment
             excessdemand += sum(demands)
-            totallbs += pds1+pds2
+            totallbs += lbs1+lbs2
             
         nvisits.sort()
         
@@ -60,12 +54,11 @@ def testschedule(schedule):
     
     Average_Demand = np.mean(avgdemand)
     Average_Fairness = np.mean(avgfairness)
-    Gini_Coefficient = np.mean(ginicoeff)
     Total_Food = np.mean(totallbs)
-    
+    Gini_Coefficient = gini(nvisits)
+
     print('Average Demand: ', Average_Demand)
     print('Average Fairness: ', Average_Fairness)
-    print('Gini Coefficient: ', Gini_Coefficient)
     print('Total Food Distributed', Total_Food)
     
     return [Average_Demand, Average_Fairness, Gini_Coefficient]
