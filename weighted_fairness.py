@@ -21,23 +21,23 @@ def Fair(quant_demanded):
 def runsite(demand):
     demand = int(demand)
     ppl_food_quantity = []      # initialize array of X_i's for ppl's quanitity in lbs for 2 weeks
+    if DETERMINISTIC:
+        kids = int(round(.41*demand))
+        adults = int(round(.4*demand))
+        seniors = demand - kids - adults
+        ppl_food_quantity = [70]*kids + [56]*adults + [42]*seniors    
+
     for i in range(0,demand):  # for each person at a site
-        if DETERMINISTIC:
-            kids = int(round(.41*demand))
-            adults = int(round(.4*demand))
-            seniors = demand - kids - adults
-            ppl_food_quantity = [70]*kids + [56]*adults + [42]*seniors    
+        if sum(ppl_food_quantity)>15000:
+            ppl_food_quantity.append(0)
         else:
-            if sum(ppl_food_quantity)>15000:
-                ppl_food_quantity.append(0)
-            else:
-                x = random.random()
-                if x<= 0.41:     # the person is a child
-                    ppl_food_quantity.append(5*14)         # 5 lbs of food per day
-                elif x <= 0.81:       # the person is an adult
-                    ppl_food_quantity.append(4*14)         # 4lbs of food a day
-                else:                    # the person is a senior
-                    ppl_food_quantity.append(3*14)       # 3lbs of food a day
+            x = random.random()
+            if x<= 0.41:     # the person is a child
+                ppl_food_quantity.append(5*14)         # 5 lbs of food per day
+            elif x <= 0.81:       # the person is an adult
+                ppl_food_quantity.append(4*14)         # 4lbs of food a day
+            else:                    # the person is a senior
+                ppl_food_quantity.append(3*14)       # 3lbs of food a day
     # quantitative meansurement of fairness
     fairness_val = Fair(ppl_food_quantity)
 
@@ -52,15 +52,15 @@ stdevs = np.array((df['StDev(Demand per Visit)']))
 variance = stdevs**2
 stdevs = np.sqrt(np.matmul(variance,dists))
 demands = np.array((df['Average Demand per Visit']))
-#demandtable = np.array(demands)
 increment = np.matmul(demands/28, dists) #how much demand increases every day
 schedules = []
 demandDist = []
+fairnesslevels = []
 
 nvisits = np.zeros(70)
 
-factorincrements = 5
-maxfactor = 5
+factorincrements = 10
+maxfactor = 20
 inc = maxfactor/factorincrements
 factor = 0
 
@@ -74,6 +74,7 @@ while factor <= maxfactor:
     totalexcess = 0
 
     thislevelschedules = []
+    
     for k in range(ntrials):
         optimal = [] #empty list for schedule
 
@@ -130,8 +131,13 @@ while factor <= maxfactor:
 
         totalexcess += excessdemand
         thislevelschedules.append(optimal)
-
+        fairness = sum(isFair)
+        
     schedules.append(thislevelschedules)
+    fairnesslevels.append(fairness)
     demandDist.append(totalexcess/(365*ntrials))
+    
     factor += inc
+
 print(demandDist)
+print(fairnesslevels)
