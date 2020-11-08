@@ -22,14 +22,14 @@ def runsite(demand):
     demand = int(demand)
     ppl_food_quantity = []      # initialize array of X_i's for ppl's quanitity in lbs for 2 weeks
     for i in range(0,demand):  # for each person at a site
-        if sum(ppl_food_quantity)>15000:
-            ppl_food_quantity.append(0)
+        if DETERMINISTIC:
+            kids = int(round(.41*demand))
+            adults = int(round(.4*demand))
+            seniors = demand - kids - adults
+            ppl_food_quantity = [70]*kids + [56]*adults + [42]*seniors    
         else:
-            if DETERMINISTIC:
-                kids = int(round(.41*demand))
-                adults = int(round(.4*demand))
-                seniors = demand - kids - adults
-                ppl_food_quantity = [70]*kids + [56]*adults + [42]*seniors
+            if sum(ppl_food_quantity)>15000:
+                ppl_food_quantity.append(0)
             else:
                 x = random.random()
                 if x<= 0.41:     # the person is a child
